@@ -1,0 +1,61 @@
+<launch>
+    <arg name="model" value="burger" doc="model type [burger, waffle, waffle_pi]"/>
+    <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
+    <arg name="open_rviz" default="true"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="move_forward_only" default="false"/>
+    
+    <!-- Use simulation time -->
+    <param name="use_sim_time" value="$(arg use_sim_time)"/>
+    
+    <!-- open Gazebo -->
+    <include file="$(find coverage_robot)/launch/gazebo.launch"/>
+
+    <!-- use turtlebot3 and slam gmapping -->
+    <!-- SLAM: Gmapping, Cartographer, Hector, Karto, Frontier_exploration, RTAB-Map -->
+    <include file="$(find coverage_robot)/launch/turtlebot3_slam.launch">
+        <arg name="model" value="$(arg model)"/>
+        <arg name="configuration_basename" value="$(arg configuration_basename)"/>
+    </include>
+        
+    <!-- open rviz -->
+    <group if="$(arg open_rviz)">
+        <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find coverage_robot)/rviz/turtlebot3_navigation.rviz"/>
+    </group>
+    
+    <!-- move_base -->
+    <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+        <arg name="model" value="$(arg model)" />
+        <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+    </include>
+    
+     <!-- automatic exploration -->
+    <node pkg="explore_lite" type="explore" respawn="false" name="explore" output="screen">
+        <param name="robot_base_frame" value="base_link"/>
+        <param name="costmap_topic" value="map"/>
+        <param name="costmap_updates_topic" value="map_updates"/>
+        <param name="visualize" value="true"/>
+        <param name="planner_frequency" value="0.33"/>
+        <param name="progress_timeout" value="50.0"/>
+        <param name="potential_scale" value="3.0"/>
+        <param name="orientation_scale" value="0.0"/>
+        <param name="gain_scale" value="1.0"/>
+        <param name="transform_tolerance" value="0.3"/>
+        <param name="min_frontier_size" value="0.6"/>
+    </node>   
+    
+    <!-- path planning -->
+    <node pkg="coverage_robot" type="coverage_path_planner.py" name="coverage_path_planner" output="screen" respawn="true">
+        <param name="robot_size" value="0.2" />
+        <param name="goal_tolerance" value="0.5" />
+        <param name="obstacle_distance_threshold" value="0.6" />
+    </node>
+        <param name="rosconsole_logger_level" value="info" />
+    
+    <!-- goal publishing -->    
+    <node name="goal_publisher" pkg="coverage_robot" type="goal_publisher.py" output="screen">
+        <param name="robot_size" value="0.3" />
+        <param name="goal_tolerance" value="0.2" />
+        <param name="obstacle_distance_threshold" value="0.2" />
+    </node>
+</launch>

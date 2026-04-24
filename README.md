@@ -1,6 +1,3 @@
-# 2024_p06_coverage_path_planning
-Students: Bo Shi, Yao Chu, Ling Xin
-
 Topic: Trajectory Planning for Cleaning Robots
 
 # Coverage Path Planning
